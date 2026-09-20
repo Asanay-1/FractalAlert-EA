@@ -1,29 +1,29 @@
 // Detects confirmed Bill Williams Fractals and sends Telegram alerts with chart screenshots
 #property copyright "Asanay"
-#property version   "1.4"
+#property version   "1.4.1"
 
 // Input Parameters
 input group "--- Telegram Settings ---"
-input string   InpTelegramToken        = "";      // Bot Token (from @BotFather)
-input string   InpTelegramChatID       = "";      // Chat ID (user or group)
+input string   InpTelegramToken        = "";      // Bot Token
+input string   InpTelegramChatID       = "";      // Chat ID
 
 input group "--- Fractal Settings ---"
 input int      InpFractalLookback      = 50;      // Max bars to search for confirmed fractal
 
 input group "--- ATR Settings ---"
-input int      InpATRPeriod            = 14;      // ATR Period (default: 14)
+input int      InpATRPeriod            = 14;      // ATR Period
 
-input group "--- Breakout Alert Settings ---"
-input bool     InpEnableBreakoutAlert  = false;   // Enable Breakout Alert (default: false)
-input double   InpBreakoutDistancePips = 0.0;     // Range beyond fractal before alert (pips, default: 0)
+input group "--- Breakout Settings ---"
+input bool     InpEnableBreakoutAlert  = false;   // Breakout Alert
+input double   InpBreakoutDistancePips = 0.0;     // Range beyond fractal before alert
 
 input group "--- Message Settings ---"
-input bool     InpShowPrice            = false;   // Include price in alert (e.g. M5 2650.50)
-input bool     InpShowSymbol           = false;   // Include symbol in alert (e.g. XAUUSD M5)
+input bool     InpShowPrice            = false;   // Show price in alert
+input bool     InpShowSymbol           = false;   // Show symbol in alert
 
 input group "--- Screenshot Settings ---"
-input int      InpChartWidth           = 1280;    // Screenshot Width (px)
-input int      InpChartHeight          = 720;     // Screenshot Height (px)
+input int      InpChartWidth           = 1280;    // Screenshot Width
+input int      InpChartHeight          = 720;     // Screenshot Height
 input int      InpMaxImages            = 10;      // Max stored screenshots before deleting oldest
 
 // Global Variables
@@ -43,7 +43,7 @@ double         m_refLowPrice;            // Price of the latest low fractal refe
 datetime       m_refLowTime;             // Time of the latest low fractal reference
 bool           m_lowBreakoutAlerted;     // True if breakout alert already fired for current ref low
 
-// Helper function to format timeframe cleanly (e.g. PERIOD_M5 -> M5)
+// Helper function to format timeframe string
 string GetPeriodString(ENUM_TIMEFRAMES period)
 {
    string s = EnumToString(period);
@@ -105,14 +105,14 @@ int OnInit()
    m_refLowTime           = 0;
    m_lowBreakoutAlerted   = false;
 
-   Print("FractalAlert initialized on ", _Symbol, " ", GetPeriodString(_Period));
+   Print("Initialized on ", _Symbol, " ", GetPeriodString(_Period));
    Print("  ATR Period: ", InpATRPeriod);
    Print("  Breakout Alert: ", (InpEnableBreakoutAlert ? "ENABLED" : "DISABLED"), " (Offset: ", InpBreakoutDistancePips, " pips)");
    Print("  Telegram Chat ID: ", InpTelegramChatID);
    Print("  Max screenshots: ", InpMaxImages);
 
    // Send startup message
-   SendTelegramText("FractalAlert EA started on " + _Symbol + " " + GetPeriodString(_Period));
+   SendTelegramText("Started on " + _Symbol + " " + GetPeriodString(_Period));
 
    return INIT_SUCCEEDED;
 }
@@ -126,7 +126,7 @@ void OnDeinit(const int reason)
    if(m_atrHandle != INVALID_HANDLE)
       IndicatorRelease(m_atrHandle);
 
-   Print("FractalAlert deinitialized. Reason: ", reason);
+   Print("Deinitialized. Reason: ", reason);
 }
 
 // Get current ATR value
@@ -423,11 +423,13 @@ void OnTick()
          double atr = GetCurrentATR();
          string tfStr = GetPeriodString(_Period);
 
-         string message = "HIGH-" + DoubleToString(atr, 2) + "\n" + tfStr;
+         string title = tfStr + "-HIGH";
          if(InpShowSymbol)
-            message = "HIGH-" + DoubleToString(atr, 2) + "\n" + _Symbol + " " + tfStr;
+            title = _Symbol + " " + title;
+
+         string message = "<b>" + title + "</b>\n" + DoubleToString(atr, 2);
          if(InpShowPrice)
-            message += " " + DoubleToString(upperPrice, _Digits);
+            message += " (" + DoubleToString(upperPrice, _Digits) + ")";
 
          Print(">>> NEW Upper Fractal at ", upperPrice, " on bar ", TimeToString(upperTime), " (ATR: ", DoubleToString(atr, 2), ")");
          SendAlertNotification(message);
@@ -449,11 +451,13 @@ void OnTick()
          double atr = GetCurrentATR();
          string tfStr = GetPeriodString(_Period);
 
-         string message = "LOW-" + DoubleToString(atr, 2) + "\n" + tfStr;
+         string title = tfStr + "-LOW";
          if(InpShowSymbol)
-            message = "LOW-" + DoubleToString(atr, 2) + "\n" + _Symbol + " " + tfStr;
+            title = _Symbol + " " + title;
+
+         string message = "<b>" + title + "</b>\n" + DoubleToString(atr, 2);
          if(InpShowPrice)
-            message += " " + DoubleToString(lowerPrice, _Digits);
+            message += " (" + DoubleToString(lowerPrice, _Digits) + ")";
 
          Print(">>> NEW Lower Fractal at ", lowerPrice, " on bar ", TimeToString(lowerTime), " (ATR: ", DoubleToString(atr, 2), ")");
          SendAlertNotification(message);
@@ -476,11 +480,13 @@ void OnTick()
             double atr = GetCurrentATR();
             string tfStr = GetPeriodString(_Period);
 
-            string message = "BREAK-HIGH-" + DoubleToString(atr, 2) + "\n" + tfStr;
+            string title = tfStr + "-BREAK-HIGH";
             if(InpShowSymbol)
-               message = "BREAK-HIGH-" + DoubleToString(atr, 2) + "\n" + _Symbol + " " + tfStr;
+               title = _Symbol + " " + title;
+
+            string message = "<b>" + title + "</b>\n" + DoubleToString(atr, 2);
             if(InpShowPrice)
-               message += " " + DoubleToString(currentBid, _Digits);
+               message += " (" + DoubleToString(currentBid, _Digits) + ")";
 
             Print(">>> BREAKOUT HIGH at ", currentBid, " (Ref High: ", m_refHighPrice, " + ", InpBreakoutDistancePips, " pips)");
             SendAlertNotification(message);
@@ -497,11 +503,13 @@ void OnTick()
             double atr = GetCurrentATR();
             string tfStr = GetPeriodString(_Period);
 
-            string message = "BREAK-LOW-" + DoubleToString(atr, 2) + "\n" + tfStr;
+            string title = tfStr + "-BREAK-LOW";
             if(InpShowSymbol)
-               message = "BREAK-LOW-" + DoubleToString(atr, 2) + "\n" + _Symbol + " " + tfStr;
+               title = _Symbol + " " + title;
+
+            string message = "<b>" + title + "</b>\n" + DoubleToString(atr, 2);
             if(InpShowPrice)
-               message += " " + DoubleToString(currentBid, _Digits);
+               message += " (" + DoubleToString(currentBid, _Digits) + ")";
 
             Print(">>> BREAKOUT LOW at ", currentBid, " (Ref Low: ", m_refLowPrice, " - ", InpBreakoutDistancePips, " pips)");
             SendAlertNotification(message);
