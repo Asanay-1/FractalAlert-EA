@@ -83,4 +83,4 @@ Attach the Expert Advisor to a chart, open the **Inputs** tab, and enter your Te
 | `InpTelegramToken` | String | Bot Authentication Token | Created via `@BotFather` |
 | `InpTelegramChatID` | String | Telegram User or Group Chat ID | Numeric ID (e.g. `123456789` or `-100...`) |
 
-Everything should now work as expected
+Everything should now work as expected.
