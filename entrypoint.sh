@@ -2,6 +2,7 @@
 
 export WINEPREFIX=${WINEPREFIX:-/root/.wine}
 export DISPLAY=:99
+export WINEDEBUG=-all
 
 rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 
@@ -25,6 +26,12 @@ if ! ps -p $XVFB_PID > /dev/null; then
     echo "Xvfb failed to start!"
     exit 1
 fi
+
+# Remove Wine default post-mortem debugger (AeDebug) and crash dialogs
+# MetaTrader 5's anti-debug protection flags winedbg in AeDebug as an active debugger
+wineboot --init > /dev/null 2>&1 || true
+wine reg delete "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebug" /f > /dev/null 2>&1 || true
+wine reg add "HKLM\\Software\\Wine\\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f > /dev/null 2>&1 || true
 
 # Define default MT5 terminal path
 MT5_PATH="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe"
